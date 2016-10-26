@@ -17,12 +17,14 @@ type RefField struct {
 // RefWithURLField struct type
 type RefWithURLField struct {
 	RefField
+
 	URL string `json:"url"`
 }
 
 // FileField struct type
 type FileField struct {
 	RefWithURLField
+
 	Display     string `json:"display"`
 	Description string `json:"description"`
 }
@@ -30,12 +32,14 @@ type FileField struct {
 // TextField struct type
 type TextField struct {
 	Field
+
 	Format string `json:"format"`
 }
 
 // TextFieldWithSummary struct type
 type TextFieldWithSummary struct {
 	TextField
+
 	Summary string `json:"summary"`
 }
 
@@ -66,6 +70,7 @@ type Node struct {
 // LegacyNode struct type contains legacy fields
 type LegacyNode struct {
 	Node
+
 	Content          []TextFieldWithSummary `json:"field_press_release_content"`
 	SidebarOld       []TextField            `json:"field_press_release_sidebar"`
 	DatePublishedOld []Field                `json:"field_press_rel_date_published"`

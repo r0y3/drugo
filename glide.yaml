@@ -1,0 +1,6 @@
+package: github.com/r0y3/drugo
+import:
+- package: github.com/SlyMarbo/rss
+- package: github.com/axgle/mahonia
+- package: github.com/nvellon/hal
+  version: ^0.2.0

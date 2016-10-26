@@ -6,7 +6,7 @@ import (
 	"github.com/SlyMarbo/rss"
 )
 
-var feedURL = flag.String("url", "https://www.nagra.com/press-releases-xml-complete/Kudelski%20Group,Nagra%20Kudelski,SmarDTV,Kudelski%20Security", "Drupal RSS feed URL")
+var feedURL = flag.String("url", "https://site.com/rss", "Drupal RSS feed URL")
 
 func main() {
 	flag.Parse()

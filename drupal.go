@@ -1,10 +1,20 @@
 package main
 
-import "github.com/SlyMarbo/rss"
+import (
+	"time"
+
+	"github.com/SlyMarbo/rss"
+)
 
 // Field struct type
 type Field struct {
 	Value string `json:"value"`
+}
+
+type FieldWithAlias struct {
+	Field
+
+	Alias string `json:"alias"`
 }
 
 // RefField struct type
@@ -45,23 +55,15 @@ type TextFieldWithSummary struct {
 
 // Node struct type
 type Node struct {
-	NID             []Field                `json:"nid"`
-	UUID            []Field                `json:"uuid"`
-	VID             []Field                `json:"vid"`
-	Langcode        []Field                `json:"langcode"`
 	Type            []RefField             `json:"type"`
 	Title           []Field                `json:"title"`
 	Body            []TextFieldWithSummary `json:"body"`
 	UID             []RefWithURLField      `json:"uid"`
 	Status          []Field                `json:"status"`
 	Created         []Field                `json:"created"`
-	Path            []Field                `json:"path"`
+	Path            []FieldWithAlias       `json:"path"`
 	BackgroundImage []FileField            `json:"field_background_image"`
 	Company         []Field                `json:"field_company"`
-	Layout          []Field                `json:"field_layout"`
-	PDFDE           []FileField            `json:"field_pdf_de"`
-	PDFEN           []FileField            `json:"field_pdf_en"`
-	PDFFR           []FileField            `json:"field_pdf_fr"`
 	Sidebar         []TextField            `json:"field_sidebar"`
 	DatePublished   []Field                `json:"field_date_published"`
 	Language        []Field                `json:"field_language"`
@@ -88,6 +90,7 @@ type DrupalService struct {
 	feedURL     string
 	registry    chan *rss.Item
 	nodeService NodeService
+	fetched     chan bool
 }
 
 // Fetch retrieves data from Drupal RSS feed.
@@ -103,12 +106,14 @@ func (s *DrupalService) Fetch() error {
 		case s.registry <- item:
 		}
 	}
+	s.fetched <- true
 
 	return nil
 }
 
 // Save saves RSS item to new Drupal website.
 func (s *DrupalService) Save() error {
+	fetched := false
 	for {
 		select {
 		case item := <-s.registry:
@@ -117,6 +122,11 @@ func (s *DrupalService) Save() error {
 			}
 			if err := s.nodeService.Save(); err != nil {
 				return err
+			}
+		case fetched = <-s.fetched:
+		case <-time.After(5 * time.Second):
+			if fetched {
+				return nil
 			}
 		}
 	}

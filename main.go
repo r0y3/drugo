@@ -8,6 +8,7 @@ import (
 	"io/ioutil"
 	"net/http"
 	"net/url"
+	"runtime"
 	"strings"
 
 	"github.com/SlyMarbo/rss"
@@ -100,7 +101,9 @@ func (pr *PressRelease) SetValues(item *rss.Item) error {
 }
 
 // Save handle save of press releases to the API endpoint.
-func (pr *PressRelease) Save() error {
+func (pr PressRelease) Save(item *rss.Item) error {
+	pr.SetValues(item)
+
 	b, err := json.Marshal(pr)
 	if err != nil {
 		return err
@@ -136,15 +139,34 @@ func main() {
 	flag.Parse()
 
 	svc := DrupalService{
-		feedURL:     *feedURL,
 		registry:    make(chan *rss.Item),
-		nodeService: &PressRelease{},
+		nodeService: PressRelease{},
 		fetched:     make(chan bool),
+		done:        make(chan bool, 1),
+		err:         make(chan error, 1),
 	}
 
-	go svc.Fetch()
+	go svc.Fetch(func() (*rss.Feed, error) {
+		return rss.Fetch(*feedURL)
+	})
 
-	if err := svc.Save(); err != nil {
-		panic(err)
+	// FIXME: Check semaphore.
+	for _ = range make([]int, runtime.NumCPU()) {
+		go svc.Save()
 	}
+
+	done := false
+
+	for {
+		select {
+		case err := <-svc.Error():
+			panic(err)
+		case done = <-svc.Done():
+		}
+
+		if done {
+			break
+		}
+	}
+
 }

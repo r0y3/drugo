@@ -81,24 +81,33 @@ type LegacyNode struct {
 
 // NodeService handle setting of values and saving item
 type NodeService interface {
-	SetValues(item *rss.Item) error
-	Save() error
+	Save(item *rss.Item) error
 }
 
 // DrupalService struct type.
 type DrupalService struct {
-	feedURL     string
 	registry    chan *rss.Item
 	nodeService NodeService
 	fetched     chan bool
+	done        chan bool
+	err         chan error
+}
+
+func (s *DrupalService) Done() chan bool {
+	return s.done
+}
+
+func (s *DrupalService) Error() chan error {
+	return s.err
 }
 
 // Fetch retrieves data from Drupal RSS feed.
-func (s *DrupalService) Fetch() error {
-	feed, err := rss.Fetch(s.feedURL)
+func (s *DrupalService) Fetch(fetchFunc func() (*rss.Feed, error)) {
+	feed, err := fetchFunc()
 
 	if err != nil {
-		return err
+		s.err <- err
+		return
 	}
 
 	for _, item := range feed.Items {
@@ -107,28 +116,22 @@ func (s *DrupalService) Fetch() error {
 		}
 	}
 	s.fetched <- true
-
-	return nil
 }
 
 // Save saves RSS item to new Drupal website.
-func (s *DrupalService) Save() error {
+func (s DrupalService) Save() {
 	fetched := false
 	for {
 		select {
 		case item := <-s.registry:
-			if err := s.nodeService.SetValues(item); err != nil {
-				return err
-			}
-			if err := s.nodeService.Save(); err != nil {
-				return err
+			if err := s.nodeService.Save(item); err != nil {
+				s.err <- err
 			}
 		case fetched = <-s.fetched:
 		case <-time.After(5 * time.Second):
 			if fetched {
-				return nil
+				s.done <- true
 			}
 		}
 	}
-	return nil
 }

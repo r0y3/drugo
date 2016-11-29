@@ -10,6 +10,7 @@ import (
 	"net/url"
 	"runtime"
 	"strings"
+	"os"
 
 	"github.com/SlyMarbo/rss"
 	"github.com/pkg/errors"
@@ -158,17 +159,13 @@ func main() {
 		go svc.Save()
 	}
 
-	done := false
-
 	for {
 		select {
 		case err := <-svc.Error():
+			// TODO: Don't panic, use logging.
 			panic(err)
 		case done = <-svc.Done():
-		}
-
-		if done {
-			break
+			os.Exit(0)
 		}
 	}
 

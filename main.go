@@ -21,7 +21,13 @@ var credentials = flag.String("authbasic", "admin:admin", "Basic Auth credential
 
 // PressRelease struct type
 type PressRelease struct {
-	LegacyNode
+	Node
+
+	BackgroundImage []FileField `json:"field_background_image"`
+	Company         []Field     `json:"field_company"`
+	Sidebar         []TextField `json:"field_sidebar"`
+	DatePublished   []Field     `json:"field_date_published"`
+	Language        []Field     `json:"field_language"`
 }
 
 // SetValues handles field values of PressRelease
@@ -45,8 +51,6 @@ func (pr *PressRelease) SetValues(item *rss.Item) error {
 	content.Format = "basic_html"
 	content.Summary = ""
 	content.Value = "Intentionally empty"
-
-	pr.Content = []TextFieldWithSummary{content}
 
 	// Set type
 	pr.Type = []RefField{{
@@ -78,7 +82,6 @@ func (pr *PressRelease) SetValues(item *rss.Item) error {
 		item.Date.Second(),
 	)
 	pr.DatePublished = []Field{{Value: datePublished}}
-	pr.DatePublishedOld = []Field{{Value: datePublished}}
 
 	// Set date created
 	pr.Created = []Field{{Value: fmt.Sprintf("%d", item.Date.Unix())}}
@@ -148,7 +151,7 @@ func main() {
 
 	go svc.Fetch(func() (*rss.Feed, error) {
 		return rss.Fetch(*feedURL)
-	})
+	}, 0)
 
 	// FIXME: Check semaphore.
 	for _ = range make([]int, runtime.NumCPU()) {

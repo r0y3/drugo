@@ -55,28 +55,13 @@ type TextFieldWithSummary struct {
 
 // Node struct type
 type Node struct {
-	Type            []RefField             `json:"type"`
-	Title           []Field                `json:"title"`
-	Body            []TextFieldWithSummary `json:"body"`
-	UID             []RefWithURLField      `json:"uid"`
-	Status          []Field                `json:"status"`
-	Created         []Field                `json:"created"`
-	Path            []FieldWithAlias       `json:"path"`
-	BackgroundImage []FileField            `json:"field_background_image"`
-	Company         []Field                `json:"field_company"`
-	Sidebar         []TextField            `json:"field_sidebar"`
-	DatePublished   []Field                `json:"field_date_published"`
-	Language        []Field                `json:"field_language"`
-}
-
-// LegacyNode struct type contains legacy fields
-type LegacyNode struct {
-	Node
-
-	Content          []TextFieldWithSummary `json:"field_press_release_content"`
-	SidebarOld       []TextField            `json:"field_press_release_sidebar"`
-	DatePublishedOld []Field                `json:"field_press_rel_date_published"`
-	LanguageOld      []Field                `json:"field_press_rel_language"`
+	Type    []RefField             `json:"type"`
+	Title   []Field                `json:"title"`
+	Body    []TextFieldWithSummary `json:"body"`
+	UID     []RefWithURLField      `json:"uid"`
+	Status  []Field                `json:"status"`
+	Created []Field                `json:"created"`
+	Path    []FieldWithAlias       `json:"path"`
 }
 
 // NodeService handle setting of values and saving item
@@ -102,7 +87,7 @@ func (s *DrupalService) Error() chan error {
 }
 
 // Fetch retrieves data from Drupal RSS feed.
-func (s *DrupalService) Fetch(fetchFunc func() (*rss.Feed, error)) {
+func (s *DrupalService) Fetch(fetchFunc func() (*rss.Feed, error), limit int) {
 	feed, err := fetchFunc()
 
 	if err != nil {
@@ -110,7 +95,10 @@ func (s *DrupalService) Fetch(fetchFunc func() (*rss.Feed, error)) {
 		return
 	}
 
-	for _, item := range feed.Items {
+	for i, item := range feed.Items {
+		if i > (limit-1) && limit > 0 {
+			break
+		}
 		select {
 		case s.registry <- item:
 		}

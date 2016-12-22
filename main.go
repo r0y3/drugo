@@ -8,9 +8,9 @@ import (
 	"io/ioutil"
 	"net/http"
 	"net/url"
+	"os"
 	"runtime"
 	"strings"
-	"os"
 
 	"github.com/SlyMarbo/rss"
 	"github.com/pkg/errors"
@@ -142,13 +142,7 @@ func (pr PressRelease) Save(item *rss.Item) error {
 func main() {
 	flag.Parse()
 
-	svc := DrupalService{
-		registry:    make(chan *rss.Item),
-		nodeService: PressRelease{},
-		fetched:     make(chan bool),
-		done:        make(chan bool, 1),
-		err:         make(chan error, 1),
-	}
+	svc := New()
 
 	go svc.Fetch(func() (*rss.Feed, error) {
 		return rss.Fetch(*feedURL)
@@ -164,8 +158,10 @@ func main() {
 		case err := <-svc.Error():
 			// TODO: Don't panic, use logging.
 			panic(err)
-		case done = <-svc.Done():
-			os.Exit(0)
+		case done := <-svc.Done():
+			if done {
+				os.Exit(0)
+			}
 		}
 	}
 

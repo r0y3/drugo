@@ -78,6 +78,16 @@ type DrupalService struct {
 	err         chan error
 }
 
+func New() *DrupalService {
+	return &DrupalService{
+		registry:    make(chan *rss.Item),
+		nodeService: PressRelease{},
+		fetched:     make(chan bool),
+		done:        make(chan bool, 1),
+		err:         make(chan error, 1),
+	}
+}
+
 func (s *DrupalService) Done() chan bool {
 	return s.done
 }
